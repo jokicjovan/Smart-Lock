@@ -1,0 +1,10 @@
+httpx>=0.26.0
+fastapi>=0.109.0
+starlette>=0.35.1
+uvicorn>=0.26.0
+opencv-python>=4.9.0.80
+tensorflow>=2.15.0
+numpy>=1.26.3
+scikit-learn>=1.4.0
+paho-mqtt>=1.6.1
+matplotlib>=3.8.2
