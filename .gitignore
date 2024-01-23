@@ -296,5 +296,6 @@ pyrightconfig.json
 
 # End of https://www.toptal.com/developers/gitignore/api/c++,python,pycharm+all
 
-Server/siamese_model/*
-Server/data
+Server/embeddings.pickle
+Server/processed/
+Server/test/
