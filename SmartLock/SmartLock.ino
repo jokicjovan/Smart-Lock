@@ -1,14 +1,15 @@
-#define IR_USE_AVR_TIMER1
+#define IR_USE_AVR_TIMER3
 #include <IRremote.hpp>
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 #include <MFRC522.h>
 #include <SPI.h>
-#include <Buzzer.h>
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
 #include <ArduinoJson.h>
+#include <Crypto.h>
+#include <SHA256.h>
 
 
 #define PIR_PIN D3
@@ -25,6 +26,10 @@ const char* ssid = "VuleSM";
 const char* password = "parrotrio";
 const char* mqtt_server = "192.168.1.2";
 
+SHA256 sha256;
+Hash* hash = &sha256;
+
+
 WiFiClient espClient;
 PubSubClient client(espClient);
 unsigned long lastMsg = 0;
@@ -39,6 +44,11 @@ IRrecv irrecv(IR_RECEIVER_PIN);
 decode_results results;
 String pinInput = "";
 bool isPirOn = false;
+bool changePinMode=false;
+String newPin = "";
+
+unsigned long lastButtonPressTime = 0;
+const unsigned long debounceDelay = 1000;
 
 byte readCard[4];
 const int numOfMasterTags = 2;
@@ -76,10 +86,6 @@ void loop() {
     reconnect();
   }
   client.loop();
-  if (digitalRead(BUTTON_PIN) == LOW) {
-    pinInput = "";
-    lockSystem();
-  }
 
   if (!isAuthorized) {
     if (digitalRead(PIR_PIN) != isPirOn) {
@@ -147,31 +153,111 @@ void loop() {
         }
       }
     }
-  }
-  else{
-    if (IrReceiver.decode()) {
-      IrReceiver.resume();
-      if (!(IrReceiver.decodedIRData.flags & IRDATA_FLAGS_IS_REPEAT)) {
-        String digit = "";
-        switch (IrReceiver.decodedIRData.command) {
-          case 28:
-            digit = "OK";
-            break;
-        }
-        if (digit == "OK") {
-          sendCapture();
-        }
-      }
-  }
-  }
+    
 
-  //tone(BUZZER_PIN,500);
   if (pinInput.length() > 0) {
     String pin = "";
     for (int i = 0; i < pinInput.length(); ++i) {
       pin = pin + "* ";
     }
-    displayText(pin);}
+    displayText(pin);
+  }else{displayText("Unauthorized");}
+  } else if (isAuthorized && !changePinMode) {
+    if (IrReceiver.decode()) {
+      IrReceiver.resume();
+      if (!(IrReceiver.decodedIRData.flags & IRDATA_FLAGS_IS_REPEAT)) {
+        Serial.println(IrReceiver.decodedIRData.command);
+        String digit="";
+        switch (IrReceiver.decodedIRData.command) {
+          case 28:
+            digit = "OK";
+            break;
+          case 13:
+            digit = "#";
+        }
+        if (digit == "OK") {
+          sendCapture();
+        }
+        if (digit == "#") { 
+          displayText("Enter new pin");
+          changePinMode=true;
+        }
+      }
+    }
+    if (digitalRead(BUTTON_PIN) == LOW) {
+      if (millis() - lastButtonPressTime >= debounceDelay) {
+        lastButtonPressTime = millis();
+        pinInput = "";
+        lockSystem();
+      }
+    }
+  }
+  else if (isAuthorized && changePinMode){
+    if (IrReceiver.decode()) {
+      IrReceiver.resume();
+      if (!(IrReceiver.decodedIRData.flags & IRDATA_FLAGS_IS_REPEAT)) {
+        String digit = "";
+        switch (IrReceiver.decodedIRData.command) {
+          case 69:
+            digit = "1";
+            break;
+          case 70:
+            digit = "2";
+            break;
+          case 71:
+            digit = "3";
+            break;
+          case 68:
+            digit = "4";
+            break;
+          case 64:
+            digit = "5";
+            break;
+          case 67:
+            digit = "6";
+            break;
+          case 7:
+            digit = "7";
+            break;
+          case 21:
+            digit = "8";
+            break;
+          case 9:
+            digit = "9";
+            break;
+          case 25:
+            digit = "0";
+            break;
+          case 28:
+            digit = "OK";
+            break;
+          case 8:
+            digit = "DEL";
+            break;
+        }
+        if (digit == "OK") {
+          if (newPin.length() == 4)
+            sendNewPin(newPin);
+            displayText("Authorized");
+        } else if (digit == "DEL") {
+          if (newPin.length() > 0)
+            newPin = newPin.substring(0, newPin.length() - 1);
+        } else if (digit != "") {
+          if (newPin.length() < 4) {
+            newPin = newPin + digit;
+          }
+        }
+
+        if (newPin.length() > 0) {
+          String pin = "";
+          for (int i = 0; i < newPin.length(); ++i) {
+            pin = pin + "* ";
+          }
+          displayText(pin);
+        }
+      }
+    }
+  }
 }
 
 
@@ -241,15 +327,26 @@ void sendPirValue(bool value) {
 void sendPinInput(String pinInput) {
   JsonDocument doc;
   doc["action"] = "pinUnlock";
-  doc["pin"] = pinInput;
+  doc["pin"] = calculateSHA256(pinInput);
   String msg = "";
   serializeJson(doc, msg);
+  client.publish("FromLock", msg.c_str());
+}
+
+void sendNewPin(String pinInput) {
+  JsonDocument doc;
+  doc["action"] = "newPin";
+  doc["pin"] = calculateSHA256(pinInput);
+  String msg = "";
+  serializeJson(doc, msg);
+  newPin="";
+  changePinMode=false;
   client.publish("FromLock", msg.c_str());
 }
 void sendTagValues(String cardInput) {
   JsonDocument doc;
   doc["action"] = "tagUnlock";
-  doc["tag"] = tagID;
+  doc["tag"] = calculateSHA256(tagID);
   String msg = "";
   serializeJson(doc, msg);
   Serial.println(msg);
@@ -263,7 +360,7 @@ void lockSystem() {
   Serial.println(msg);
   client.publish("FromLock", msg.c_str());
 }
-void sendCapture(){
+void sendCapture() {
   JsonDocument doc;
   doc["action"] = "capture";
   String msg = "";
@@ -272,36 +369,35 @@ void sendCapture(){
   client.publish("FromLock", msg.c_str());
 }
 
+
 void messageCallback(char* topic, byte* payload, unsigned int length) {
   Serial.print("Message arrived [");
   Serial.print(topic);
   Serial.print("] ");
   JsonDocument doc;
   deserializeJson(doc, payload);
-  if (!doc["capture"].isNull()){
-    if (doc["capture"]=="done"){
+  if (!doc["capture"].isNull()) {
+    if (doc["capture"] == "done") {
       displayText("Face added!");
       delay(3000);
       displayText("Authorized");
     }
-    if (doc["capture"]=="fail"){
+    if (doc["capture"] == "fail") {
       displayText("Error! TryAgain!");
       delay(3000);
       displayText("Authorized");
     }
 
-  }else{
-  isAuthorized=doc["authorized"]==true;
-  Serial.println(isAuthorized);
-  if (isAuthorized){
-    displayText("Authorized");
+  } else {
+    isAuthorized = doc["authorized"] == true;
+    Serial.println(isAuthorized);
+    if (isAuthorized) {
+      displayText("Authorized");
+    } else {
+      displayText("UnAuthorized");
+    }
   }
-  else{
-    displayText("UnAuthorized");
-  }
-  }
-  pinInput="";
-
+  pinInput = "";
 }
 void reconnect() {
   while (!client.connected()) {
@@ -318,4 +414,17 @@ void reconnect() {
       delay(5000);
     }
   }
+}
+
+String calculateSHA256(String data) {
+  uint8_t value[32];
+  hash->reset();
+  hash->update(data.c_str(), strlen(data.c_str()));
+  hash->finalize(value, sizeof(value));
+  String result = "";
+  for (size_t i = 0; i < 32; i++) {
+    result += String(value[i], HEX);
+  }
+  Serial.println(result);
+  return result;
 }

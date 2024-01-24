@@ -14,9 +14,9 @@ receive_topic = f"FromLock"
 app = FastAPI()
 app.isAuthorized = True
 app.recognizer = Recognizer()
-master_tags = ["07081075dcdfa5b91b5c8aac1402f05d28b68563c026f0fe03412c087bf41c9f",
-               "9bc6180d675480f93a205652c8477f350aeecd0c21618290c618ba0dfaec9ed5"]
-pin = "b2cf84c62d338adb214f88c9e56a42a8e87c17ae5f7eb176bb248b3cb6baa4f7"
+master_tags = ["781075dcdfa5b91b5c8aac142f05d28b68563c026f0fe3412c87bf41c9f",
+               "9bc618d675480f93a205652c8477f35aeecdc21618290c618badfaec9ed5"]
+app.pin = "b2cf84c62d338adb214f88c9e56a42a8e87c17ae5f7eb176bb248b3cb6baa4f7"
 client = mqtt.Client(client_id="11111111", clean_session=True)
 
 
@@ -29,12 +29,15 @@ def on_message(client, user_data, msg):
         data = json.loads(msg.payload.decode())
         if data.get("action", None) == "pinUnlock":
             pin_input = data.get("pin", None)
-            if sha256(pin_input.encode('utf-8')).hexdigest() == pin:
+            if pin_input == app.pin:
                 app.isAuthorized = True
             client.publish(send_topic, json.dumps({"authorized": app.isAuthorized}))
+        if data.get("action", None) == "newPin":
+            pin_input = data.get("pin", None)
+            app.pin=pin_input
         if data.get("action", None) == "tagUnlock":
             tag_input = data.get("tag", None)
-            if sha256(tag_input.encode('utf-8')).hexdigest() in master_tags:
+            if tag_input in master_tags:
                 app.isAuthorized = True
             client.publish(send_topic, json.dumps({"authorized": app.isAuthorized}))
         if data.get("action", None) == "lock":
