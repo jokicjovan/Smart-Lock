@@ -54,7 +54,7 @@ byte readCard[4];
 const int numOfMasterTags = 2;
 String masterTagsIDs[numOfMasterTags] = { "22827021", "703FC221" };
 String tagID = "";
-MFRC522 mfrc522(RFID_SS_PIN, RFID_RST_PIN);
+MFRC522 mfrc522(RFID_SS_PIN,RFID_RST_PIN);
 
 bool isAuthorized = false;
 void setup() {
@@ -343,6 +343,9 @@ void sendNewPin(String pinInput) {
   newPin="";
   changePinMode=false;
   client.publish("FromLock", msg.c_str());
+  displayText("Pin changed!");
+  delay(3000);
+  displayText("Authorized");
 }
 void sendTagValues(String cardInput) {
   JsonDocument doc;
@@ -384,20 +387,27 @@ void messageCallback(char* topic, byte* payload, unsigned int length) {
       displayText("Authorized");
     }
     if (doc["capture"] == "fail") {
-      displayText("Error! TryAgain!");
+      displayText("Error! Try Again!");
       delay(3000);
       displayText("Authorized");
     }
 
-  } else {
+  } else if (!doc["authorized"].isNull()) {
     isAuthorized = doc["authorized"] == true;
     Serial.println(isAuthorized);
     if (isAuthorized) {
       displayText("Authorized");
       isPirOn=false;
     } else {
-      displayText("UnAuthorized");
+      displayText("Error! Try Again!");
+      delay(2000);
+      displayText("Unauthorized");
     }
+  }
+  else if (!doc["lock"].isNull()){
+      isPirOn=false;
+      isAuthorized=false;
+      displayText("Unauthorized");
   }
   pinInput = "";
 }

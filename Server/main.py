@@ -67,7 +67,7 @@ def on_message(client, user_data, msg):
             client.publish(send_topic, json.dumps({"authorized": app.isAuthorized}))
         if data.get("action", None) == "lock":
             app.isAuthorized = False
-            client.publish(send_topic, json.dumps({"authorized": app.isAuthorized}))
+            client.publish(send_topic, json.dumps({"lock": "locked"}))
             logging.info(f"Locked")
         if data.get("action", None) == "pir":
             state = data.get("state", None)
@@ -117,23 +117,3 @@ async def add_person_from_stream():
 async def root():
     return {"message": "Hello World"}
 
-@app.post("/turn_on_recognition")
-async def turn_on_recognition():
-    if not app.recognizer.recognition_active:
-        app.recognizer.recognition_active = True
-        loop.create_task(check_stream())
-    return "Turned on sucessfully!"
-
-
-@app.post("/turn_off_recognition")
-async def turn_off_recognition():
-    if app.recognizer.recognition_active:
-        app.recognizer.recognition_active = False
-    return "Turned off sucessfully!"
-
-
-@app.post("/add_person")
-async def add_person():
-    if app.isAuthorized:
-        loop.create_task(add_person_from_stream())
-    return "Turned on adding process!"
