@@ -22,9 +22,9 @@
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 64
 
-const char* ssid = "VuleSM";
-const char* password = "parrotrio";
-const char* mqtt_server = "192.168.1.2";
+const char* ssid = "CrniNet";
+const char* password = "nemozcrnje";
+const char* mqtt_server = "192.168.1.171";
 
 SHA256 sha256;
 Hash* hash = &sha256;
@@ -177,6 +177,7 @@ void loop() {
         }
         if (digit == "OK") {
           sendCapture();
+          displayText("Capturing...");
         }
         if (digit == "#") { 
           displayText("Enter new pin");
@@ -393,6 +394,7 @@ void messageCallback(char* topic, byte* payload, unsigned int length) {
     Serial.println(isAuthorized);
     if (isAuthorized) {
       displayText("Authorized");
+      isPirOn=false;
     } else {
       displayText("UnAuthorized");
     }

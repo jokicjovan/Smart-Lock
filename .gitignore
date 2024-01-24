@@ -299,3 +299,5 @@ pyrightconfig.json
 Server/embeddings.pickle
 Server/processed/
 Server/test/
+Server/log.txt
+Server/unauthorized/

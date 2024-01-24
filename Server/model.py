@@ -92,5 +92,5 @@ class VGGFaceModel:
         if min_score < match_threshold:
             return labels[score_array.argmin()]
 
-        print(f"no match found, min score: {min_score} for {labels[score_array.argmin()]}")
+        #print(f"no match found, min score: {min_score} for {labels[score_array.argmin()]}")
         return None
