@@ -14,17 +14,23 @@ class ResNet50:
         self.model = VGGFace(model='resnet50',
                              include_top=False,
                              input_shape=(224, 224, 3), pooling='avg')
-        self.load_authorized_persons()
+        self.authorized_embeddings = {}
+        self.create_authorized_embeddings()
+        self.load_authorized_embeddings()
 
-    def load_authorized_persons(self):
+    def create_authorized_embeddings(self):
         (labels, authorized_embeddings) = self.get_authorized_embeddings()
         embedding_dic = {l: em for (l, em) in zip(labels, authorized_embeddings)}
         with open(self.embeddings_file_name, 'wb') as f:
             pickle.dump(embedding_dic, f)
 
+    def load_authorized_embeddings(self):
+        with open(self.embeddings_file_name, "rb") as f:
+            self.authorized_embeddings = pickle.load(f)
+
     def add_authorized_person(self, new_person_images):
         authorized_persons_directories = [d for d in os.listdir(self.authorized_folder_name) if
-                              os.path.isdir(os.path.join(self.authorized_folder_name, d))]
+                                          os.path.isdir(os.path.join(self.authorized_folder_name, d))]
         if authorized_persons_directories:
             highest_number = max([int(d.split('_')[1]) for d in authorized_persons_directories])
         else:
@@ -34,13 +40,12 @@ class ResNet50:
 
         for i, person_image in enumerate(new_person_images):
             cv2.imwrite(os.path.join(new_person_directory, str(i) + ".png"), person_image)
-        self.load_authorized_persons()
+        self.create_authorized_embeddings()
+        self.load_authorized_embeddings()
 
     def check_authorization(self, image_unknown):
-        with open(self.embeddings_file_name, "rb") as f:
-            embedding_dic = pickle.load(f)
-        labels = [key for key in embedding_dic.keys()]
-        embeddings = [value for value in embedding_dic.values()]
+        labels = [key for key in self.authorized_embeddings.keys()]
+        embeddings = [value for value in self.authorized_embeddings.values()]
         unknown_embedding = self.get_embedding(image_unknown)
         return self.find_match(labels, embeddings, unknown_embedding)
 
