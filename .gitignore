@@ -297,6 +297,7 @@ pyrightconfig.json
 # End of https://www.toptal.com/developers/gitignore/api/c++,python,pycharm+all
 
 Server/embeddings.pickle
-Server/processed/*
+Server/authorized/*
+Server/test/*
 Server/unauthorized/*
 Server/log.txt
