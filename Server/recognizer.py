@@ -1,12 +1,10 @@
 import asyncio
 import datetime
 import os
-from http.client import HTTPException
-from io import BytesIO
-
 import cv2
 import httpx
 import numpy as np
+from io import BytesIO
 from PIL import Image
 
 from resnet_model import ResNet50
@@ -104,8 +102,8 @@ class Recognizer:
             for (x, y, w, h) in face:
                 face_roi = frame[y:y + h, x:x + w]
                 face_roi = cv2.resize(face_roi, (224, 224), interpolation=cv2.INTER_CUBIC)
-                face = self.ann.check_authorization(face_roi)
-                if face is None:
+                person = self.ann.check_authorization(face_roi)
+                if person is None:
                     new_person_faces.append(face_roi)
 
             # streaming window
@@ -126,7 +124,7 @@ class Recognizer:
         return False
 
     async def toggle_led(self, value):
-        if self.led_intensity != value and 0<=value<256:
+        if self.led_intensity != value and 0 <= value < 256:
             self.led_intensity = value
             async with httpx.AsyncClient() as client:
                 response = await client.get(self.camera_url + f"/control?var=led_intensity&val={value}")
