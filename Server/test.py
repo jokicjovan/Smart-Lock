@@ -67,15 +67,15 @@ async def calculate_false_acceptance_rate(false_neg, num_of_imgs):
 
 
 async def calculate_precision(true_positives, false_positives):
-    return round(true_positives / (true_positives + false_positives), 2)
+    return round(true_positives / (true_positives + false_positives), 2) * 100
 
 
 async def calculate_recall(true_positives, false_negatives):
-    return round(true_positives / (true_positives + false_negatives), 2)
+    return round(true_positives / (true_positives + false_negatives), 2) * 100
 
 
 async def calculate_f1(precision, recall):
-    return round(2 * precision * recall / (precision + recall), 2)
+    return round(2 * precision * recall / (precision + recall), 2) * 100
 
 
 async def main():
@@ -101,9 +101,9 @@ async def main():
     print(f"tested on {len(images_dataset2)} images of unauthorized person")
     print(f"FRR: {ffr} %")
     print(f"FAR: {far} %")
-    print(f"Precision: {precision}")
-    print(f"Recall: {recall}")
-    print(f"F1: {f1}")
+    print(f"Precision: {precision} %")
+    print(f"Recall: {recall} %")
+    print(f"F1: {f1} %")
 
 
 asyncio.run(main())
