@@ -22,7 +22,7 @@ class VGG16:
         self.embedding_file_name = 'vgg16.pickle'
         self.model_name = 'vgg16.keras'
         self.class_names = []
-        if os.path.exists(self.model_name):
+        if os.path.exists(self.model_name) and os.path.exists(self.embedding_file_name):
             self.load_model()
         else:
             self.train_model()
