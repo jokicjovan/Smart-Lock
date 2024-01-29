@@ -9,7 +9,7 @@ import httpx
 import numpy as np
 from PIL import Image
 
-from model import VGGFaceModel
+from resnet_model import ResNet50
 
 
 def get_face_classifier():
@@ -19,7 +19,7 @@ def get_face_classifier():
 
 
 def get_ann_model():
-    return VGGFaceModel()
+    return ResNet50()
 
 
 class Recognizer:
@@ -53,14 +53,15 @@ class Recognizer:
             for (x, y, w, h) in face:
                 face_roi = frame[y:y + h, x:x + w]
                 face_roi = cv2.resize(face_roi, (224, 224), interpolation=cv2.INTER_CUBIC)
-                person = self.ann.check_face(face_roi)
+                person = self.ann.check_authorization(face_roi)
                 print(person)
 
-            # for (x, y, w, h) in face:
-            #     cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 4)
-            # cv2.imshow('Video Stream', frame)
-            # if cv2.waitKey(1) & 0xFF == ord('q'):
-            #     break
+            # streaming window
+            for (x, y, w, h) in face:
+                cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 4)
+            cv2.imshow('Video Stream', frame)
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
 
             await asyncio.sleep(0.00001)  # 0.1ms
         cap.release()
@@ -103,9 +104,16 @@ class Recognizer:
             for (x, y, w, h) in face:
                 face_roi = frame[y:y + h, x:x + w]
                 face_roi = cv2.resize(face_roi, (224, 224), interpolation=cv2.INTER_CUBIC)
-                face = self.ann.check_face(face_roi)
+                face = self.ann.check_authorization(face_roi)
                 if face is None:
                     new_person_faces.append(face_roi)
+
+            # streaming window
+            for (x, y, w, h) in face:
+                cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 4)
+            cv2.imshow('Video Stream', frame)
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
 
             await asyncio.sleep(0.00001)
 
@@ -113,7 +121,7 @@ class Recognizer:
         cv2.destroyAllWindows()
         await self.toggle_led(0)
         if len(new_person_faces) >= 10:
-            self.ann.add_face(new_person_faces)
+            self.ann.add_authorized_person(new_person_faces)
             return True
         return False
 
