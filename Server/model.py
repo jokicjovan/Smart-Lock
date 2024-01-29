@@ -1,3 +1,6 @@
+from keras import Model
+from keras.src.callbacks import ReduceLROnPlateau, ModelCheckpoint
+from keras.src.layers import Flatten, Dense, Dropout
 from keras_vggface import VGGFace
 from keras_vggface import utils
 from scipy.spatial.distance import cosine
@@ -48,6 +51,7 @@ class VGGFaceModel:
         image = np.array(image, "float32")
         image = utils.preprocess_input(image, version=2)
         embedding = self.model.predict(image)
+        print(len(embedding[0]))
         return embedding[0]
 
     def get_embeddings_dir(self, dir_path):
@@ -94,3 +98,27 @@ class VGGFaceModel:
 
         #print(f"no match found, min score: {min_score} for {labels[score_array.argmin()]}")
         return None
+if __name__ == '__main__':
+    model=VGGFaceModel()
+    for layer in model.model.layers[0:37]:
+        layer.trainable=False
+
+    x = model.model.output
+    x = Flatten()(x)  # Flatten dimensions to for use in FC layers
+    x = Dense(512, activation='relu')(x)
+    x = Dropout(0.5)(x)  # Dropout layer to reduce overfitting
+    x = Dense(256, activation='relu')(x)
+    x = Dense(8, activation='softmax')(x)  # Softmax for multiclass
+    transfer_model = Model(inputs=model.model.input, outputs=x)
+    lr_reduce = ReduceLROnPlateau(monitor='val_accuracy', factor=0.6, patience=8, verbose=1, mode='max', min_lr=5e-5)
+    checkpoint = ModelCheckpoint('vgg16_finetune.h15', monitor='val_accuracy', mode='max', save_best_only=True, verbose=1)
+    learning_rate = 5e-5
+    transfer_model.compile(loss="categorical_crossentropy", optimizer=Adam(lr=learning_rate), metrics=["accuracy"])
+    history = transfer_model.fit(X_train, y_train, batch_size=1, epochs=50, validation_data=(X_test, y_test), callbacks=[lr_reduce, checkpoint])
+
+    for i, layer in enumerate(model.model.layers):
+        print(i, layer.name, layer.trainable)
+    imagePath_unknown = 'test/person_1.jpg'
+    image_unknown = cv2.imread(imagePath_unknown)
+    unknown_embedding = model.check_face(image_unknown)
+    print(unknown_embedding)
