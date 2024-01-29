@@ -51,12 +51,10 @@ async def get_true_pos_false_neg(images_dataset, model):
 
 async def get_false_pos(images_dataset, model):
     false_pos = 0
-    num_of_imgs = 0
     for image in images_dataset:
         person = model.check_authorization(image)
         if person is not None:
             false_pos += 1
-        num_of_imgs += 1
     return false_pos
 
 
