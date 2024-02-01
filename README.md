@@ -1,4 +1,4 @@
-# PicoGuard
+# SmartLock
 ## Opis Problema
 Naš cilj je kreirati inovativan i siguran softver za pametnu kontrolu vrata koji će se izvoditi na Raspberry Pi Pico uređaju uz pomoć ESP 8266 mikrokontrolera za konekciju sa internetom, u microPython programskom jeziku. Ovaj softver će omogućiti različite metode otključavanja vrata, uključujući:
 
