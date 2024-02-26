@@ -1,4 +1,31 @@
 # SmartLock
+![20240124_183954](https://github.com/vukasinb7/Smart-Lock/assets/51921035/a50f6589-2bef-476e-9a25-5261436b4ac3)
+
+## RFID Unlock
+https://github.com/vukasinb7/Smart-Lock/assets/51921035/39936019-b7f6-4677-b1db-a3396ef2b5e7
+
+## Pin Unlock
+https://github.com/vukasinb7/Smart-Lock/assets/51921035/6db37615-96e7-4641-a52c-213ec19f2875
+
+## Change Pin
+https://github.com/vukasinb7/Smart-Lock/assets/51921035/9ae02323-b954-4454-9a6c-9dadcb5a535c
+
+## Add New Face
+https://github.com/vukasinb7/Smart-Lock/assets/51921035/89f61633-000a-4b69-88e4-db1149f8da9b
+
+## Face Recognition
+https://github.com/vukasinb7/Smart-Lock/assets/51921035/14e8de73-c724-4877-ab06-3ad2226fe69c
+
+## Face Recognition Dark Mode
+https://github.com/vukasinb7/Smart-Lock/assets/51921035/0f65f87c-7333-4b1f-ba6f-4f22c13cde54
+
+## Alarm
+https://github.com/vukasinb7/Smart-Lock/assets/51921035/a5415788-063d-4e4b-bac8-c0de92248742
+
+
+
+
+
 ## Opis Problema
 Naš cilj je kreirati inovativan i siguran softver za pametnu kontrolu vrata koji će se izvoditi na Raspberry Pi Pico uređaju uz pomoć ESP 8266 mikrokontrolera za konekciju sa internetom, u microPython programskom jeziku. Ovaj softver će omogućiti različite metode otključavanja vrata, uključujući:
 
