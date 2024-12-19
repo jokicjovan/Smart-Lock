@@ -7,7 +7,7 @@ import numpy as np
 from io import BytesIO
 from PIL import Image
 
-from resnet_model import ResNet50
+from RESNET50 import ResNet50
 
 
 def get_face_classifier():
